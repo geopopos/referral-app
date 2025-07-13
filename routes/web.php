@@ -63,6 +63,13 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     
     // Pipeline analytics
     Route::get('/pipeline-analytics', [AdminController::class, 'pipelineAnalytics'])->name('pipeline-analytics');
+    
+    // Webhook management routes
+    Route::get('/webhooks', [AdminController::class, 'webhooks'])->name('webhooks');
+    Route::post('/webhooks/settings', [AdminController::class, 'updateWebhookSettings'])->name('webhooks.settings.update');
+    Route::post('/webhooks/test', [AdminController::class, 'testWebhook'])->name('webhooks.test');
+    Route::post('/webhooks/retry-failed', [AdminController::class, 'retryFailedWebhooks'])->name('webhooks.retry-failed');
+    Route::delete('/webhooks/logs/cleanup', [AdminController::class, 'cleanupWebhookLogs'])->name('webhooks.logs.cleanup');
 });
 
 require __DIR__.'/auth.php';

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\WebhookService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -260,5 +261,42 @@ class Lead extends Model
             'offer_made' => $this->offer_amount ?? 0,
             default => 0
         };
+    }
+
+    /**
+     * Boot the model and set up event listeners for webhooks.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($lead) {
+            $webhookService = app(WebhookService::class);
+            $webhookService->sendWebhook('lead.created', [
+                'lead' => $lead->toArray(),
+                'referrer' => $lead->referrer ? $lead->referrer->only(['id', 'name', 'email', 'referral_code']) : null,
+            ]);
+        });
+
+        static::updated(function ($lead) {
+            $webhookService = app(WebhookService::class);
+            
+            // Send general update webhook
+            $webhookService->sendWebhook('lead.updated', [
+                'lead' => $lead->toArray(),
+                'referrer' => $lead->referrer ? $lead->referrer->only(['id', 'name', 'email', 'referral_code']) : null,
+                'changes' => $lead->getChanges(),
+            ]);
+
+            // Send specific status change webhook if status changed
+            if ($lead->wasChanged('status')) {
+                $webhookService->sendWebhook('lead.status_changed', [
+                    'lead' => $lead->toArray(),
+                    'referrer' => $lead->referrer ? $lead->referrer->only(['id', 'name', 'email', 'referral_code']) : null,
+                    'previous_status' => $lead->getOriginal('status'),
+                    'new_status' => $lead->status,
+                ]);
+            }
+        });
     }
 }

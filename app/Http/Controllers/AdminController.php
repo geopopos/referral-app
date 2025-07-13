@@ -12,9 +12,14 @@ use App\Models\CommissionSetting;
 use App\Models\LandingPageContent;
 use App\Models\Lead;
 use App\Models\User;
-use Illuminate\Http\Request;
+use App\Models\WebhookSetting;
+use App\Models\WebhookLog;
+use App\Services\WebhookService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
@@ -558,5 +563,161 @@ class AdminController extends Controller
         ];
 
         return view('admin.pipeline-analytics', compact('analytics'));
+    }
+
+    /**
+     * Display webhook management page.
+     */
+    public function webhooks(): View
+    {
+        $webhookService = app(WebhookService::class);
+        
+        // Get or create webhook settings
+        $settings = WebhookSetting::first();
+        if (!$settings) {
+            $settings = WebhookSetting::create([
+                'url' => '',
+                'auth_type' => 'none',
+                'auth_credentials' => [],
+                'enabled_events' => [],
+                'is_active' => false,
+                'max_retry_attempts' => 3,
+                'retry_delays' => [60, 300, 900],
+            ]);
+        }
+
+        // Get recent webhook logs
+        $logs = WebhookLog::with('webhookSetting')
+            ->latest()
+            ->paginate(20);
+
+        // Get webhook statistics
+        $stats = $webhookService->getWebhookStats($settings, 30);
+
+        // Available events and auth types
+        $availableEvents = [
+            'lead.created' => 'Lead Created',
+            'lead.updated' => 'Lead Updated',
+            'lead.status_changed' => 'Lead Status Changed',
+            'commission.created' => 'Commission Created',
+            'commission.updated' => 'Commission Updated',
+            'commission.approved' => 'Commission Approved',
+            'commission.paid' => 'Commission Paid',
+        ];
+
+        $authTypes = [
+            'none' => 'No Authentication',
+            'bearer' => 'Bearer Token',
+            'basic' => 'Basic Authentication',
+            'custom' => 'Custom Headers',
+        ];
+
+        return view('admin.webhooks', compact(
+            'settings',
+            'logs',
+            'stats',
+            'availableEvents',
+            'authTypes'
+        ));
+    }
+
+    /**
+     * Update webhook settings.
+     */
+    public function updateWebhookSettings(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'url' => 'required|url|max:500',
+            'auth_type' => 'required|in:none,bearer,basic,custom',
+            'auth_credentials' => 'nullable|array',
+            'enabled_events' => 'nullable|array',
+            'enabled_events.*' => 'string|in:lead.created,lead.updated,lead.status_changed,commission.created,commission.updated,commission.approved,commission.paid',
+            'is_active' => 'boolean',
+            'max_retry_attempts' => 'required|integer|min:0|max:10',
+            'retry_delays' => 'nullable|array',
+            'retry_delays.*' => 'integer|min:1',
+            'secret_key' => 'nullable|string|max:255',
+        ]);
+
+        // Get or create webhook settings
+        $settings = WebhookSetting::first();
+        if (!$settings) {
+            $settings = new WebhookSetting();
+        }
+
+        // Update settings
+        $settings->fill([
+            'url' => $validated['url'],
+            'auth_type' => $validated['auth_type'],
+            'auth_credentials' => $validated['auth_credentials'] ?? [],
+            'enabled_events' => $validated['enabled_events'] ?? [],
+            'is_active' => $request->boolean('is_active'),
+            'max_retry_attempts' => $validated['max_retry_attempts'],
+            'retry_delays' => $validated['retry_delays'] ?? [60, 300, 900],
+            'secret_key' => $validated['secret_key'],
+        ]);
+
+        $settings->save();
+
+        return back()->with('success', 'Webhook settings updated successfully.');
+    }
+
+    /**
+     * Test webhook delivery.
+     */
+    public function testWebhook(): RedirectResponse
+    {
+        $webhookService = app(WebhookService::class);
+        
+        // Get webhook settings
+        $settings = WebhookSetting::where('is_active', true)->first();
+        
+        if (!$settings) {
+            return back()->with('error', 'No active webhook settings found. Please configure and activate webhook settings first.');
+        }
+
+        try {
+            $result = $webhookService->sendTestWebhook($settings);
+
+            if ($result['success']) {
+                return back()->with('success', 'Test webhook sent successfully! Response time: ' . $result['response_time'] . ', Status: ' . $result['http_status']);
+            } else {
+                return back()->with('error', 'Test webhook failed: ' . ($result['error_message'] ?? 'Unknown error'));
+            }
+        } catch (\Exception $e) {
+            Log::error('Test webhook error: ' . $e->getMessage());
+            return back()->with('error', 'Failed to send test webhook: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Retry all failed webhooks.
+     */
+    public function retryFailedWebhooks(): RedirectResponse
+    {
+        $webhookService = app(WebhookService::class);
+        
+        $retriedCount = $webhookService->retryFailedWebhooks();
+
+        if ($retriedCount > 0) {
+            return back()->with('success', "Queued {$retriedCount} failed webhook(s) for retry.");
+        } else {
+            return back()->with('info', 'No failed webhooks found to retry.');
+        }
+    }
+
+    /**
+     * Clean up old webhook logs.
+     */
+    public function cleanupWebhookLogs(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'days' => 'required|integer|min:1|max:365',
+        ]);
+
+        $cutoffDate = now()->subDays($validated['days']);
+        $deletedCount = WebhookLog::where('created_at', '<', $cutoffDate)->delete();
+
+        return back()->with('success', "Deleted {$deletedCount} webhook log(s) older than {$validated['days']} days.");
     }
 }

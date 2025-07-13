@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\WebhookService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -83,5 +84,57 @@ class Commission extends Model
     public function markAsApproved(): void
     {
         $this->update(['status' => 'approved']);
+    }
+
+    /**
+     * Boot the model and set up event listeners for webhooks.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($commission) {
+            $webhookService = app(WebhookService::class);
+            $webhookService->sendWebhook('commission.created', [
+                'commission' => $commission->toArray(),
+                'user' => $commission->user ? $commission->user->only(['id', 'name', 'email', 'referral_code']) : null,
+                'lead' => $commission->lead ? $commission->lead->toArray() : null,
+            ]);
+        });
+
+        static::updated(function ($commission) {
+            $webhookService = app(WebhookService::class);
+            
+            // Send general update webhook
+            $webhookService->sendWebhook('commission.updated', [
+                'commission' => $commission->toArray(),
+                'user' => $commission->user ? $commission->user->only(['id', 'name', 'email', 'referral_code']) : null,
+                'lead' => $commission->lead ? $commission->lead->toArray() : null,
+                'changes' => $commission->getChanges(),
+            ]);
+
+            // Send specific status change webhooks
+            if ($commission->wasChanged('status')) {
+                $previousStatus = $commission->getOriginal('status');
+                $newStatus = $commission->status;
+
+                if ($newStatus === 'approved') {
+                    $webhookService->sendWebhook('commission.approved', [
+                        'commission' => $commission->toArray(),
+                        'user' => $commission->user ? $commission->user->only(['id', 'name', 'email', 'referral_code']) : null,
+                        'lead' => $commission->lead ? $commission->lead->toArray() : null,
+                        'previous_status' => $previousStatus,
+                    ]);
+                } elseif ($newStatus === 'paid') {
+                    $webhookService->sendWebhook('commission.paid', [
+                        'commission' => $commission->toArray(),
+                        'user' => $commission->user ? $commission->user->only(['id', 'name', 'email', 'referral_code']) : null,
+                        'lead' => $commission->lead ? $commission->lead->toArray() : null,
+                        'previous_status' => $previousStatus,
+                        'paid_at' => $commission->paid_at,
+                    ]);
+                }
+            }
+        });
     }
 }
