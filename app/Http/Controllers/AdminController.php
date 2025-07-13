@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\AppointmentBookedNotification;
+use App\Mail\CommissionApprovedNotification;
+use App\Mail\CommissionPaidNotification;
+use App\Mail\OfferMadeNotification;
+use App\Mail\SaleClosedNotification;
 use App\Models\Commission;
 use App\Models\CommissionSetting;
 use App\Models\LandingPageContent;
 use App\Models\Lead;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\View\View;
 
 class AdminController extends Controller
 {
@@ -64,14 +70,44 @@ class AdminController extends Controller
             'commission_override_reason' => 'nullable|string|max:500',
         ]);
 
+        $oldStatus = $lead->status;
+        $newStatus = $validated['status'];
+
         // Use the Lead model's moveToStatus method for proper pipeline management
-        $success = $lead->moveToStatus($validated['status'], $validated);
+        $success = $lead->moveToStatus($newStatus, $validated);
 
         if (!$success) {
             return back()->with('error', 'Invalid status transition.');
         }
 
+        // Send email notifications to referrer if status changed and there's a referrer
+        if ($oldStatus !== $newStatus && $lead->referrer) {
+            $this->sendStatusChangeNotification($lead, $newStatus);
+        }
+
         return back()->with('success', 'Lead updated successfully.');
+    }
+
+    /**
+     * Send email notification when lead status changes.
+     */
+    private function sendStatusChangeNotification(Lead $lead, string $newStatus): void
+    {
+        $referrer = $lead->referrer;
+        
+        switch ($newStatus) {
+            case 'appointment_scheduled':
+                Mail::to($referrer->email)->send(new AppointmentBookedNotification($referrer, $lead));
+                break;
+                
+            case 'offer_made':
+                Mail::to($referrer->email)->send(new OfferMadeNotification($referrer, $lead));
+                break;
+                
+            case 'sale':
+                Mail::to($referrer->email)->send(new SaleClosedNotification($referrer, $lead));
+                break;
+        }
     }
 
     /**
@@ -104,15 +140,41 @@ class AdminController extends Controller
             'status' => 'required|in:pending,approved,paid',
         ]);
 
-        if ($validated['status'] === 'paid') {
+        $oldStatus = $commission->status;
+        $newStatus = $validated['status'];
+
+        if ($newStatus === 'paid') {
             $commission->markAsPaid();
-        } elseif ($validated['status'] === 'approved') {
+        } elseif ($newStatus === 'approved') {
             $commission->markAsApproved();
         } else {
             $commission->update($validated);
         }
 
+        // Send email notification if status changed
+        if ($oldStatus !== $newStatus) {
+            $this->sendCommissionStatusNotification($commission, $newStatus);
+        }
+
         return back()->with('success', 'Commission status updated successfully.');
+    }
+
+    /**
+     * Send email notification when commission status changes.
+     */
+    private function sendCommissionStatusNotification(Commission $commission, string $newStatus): void
+    {
+        $partner = $commission->user;
+        
+        switch ($newStatus) {
+            case 'approved':
+                Mail::to($partner->email)->send(new CommissionApprovedNotification($partner, $commission));
+                break;
+                
+            case 'paid':
+                Mail::to($partner->email)->send(new CommissionPaidNotification($partner, $commission));
+                break;
+        }
     }
 
     /**

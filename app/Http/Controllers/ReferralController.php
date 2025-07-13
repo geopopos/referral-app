@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ReferralSignupNotification;
 use App\Models\Lead;
 use App\Models\LandingPageContent;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\View\View;
 
 class ReferralController extends Controller
 {
@@ -59,7 +61,7 @@ class ReferralController extends Controller
         // Create the lead
         $lead = Lead::create($validated);
 
-        // If there's a valid referral code, create a commission
+        // If there's a valid referral code, create a commission and send notification
         if ($validated['referral_code']) {
             $referrer = User::where('referral_code', $validated['referral_code'])->first();
             
@@ -71,6 +73,9 @@ class ReferralController extends Controller
                     'amount' => 500.00, // Default commission amount
                     'status' => 'pending',
                 ]);
+
+                // Send email notification to the referrer
+                Mail::to($referrer->email)->send(new ReferralSignupNotification($referrer, $lead));
             }
         }
 
