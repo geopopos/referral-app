@@ -1,0 +1,174 @@
+name: Deploy to Digital Ocean VPS
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pdo_pgsql, zip, gd, redis
+        coverage: none
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install Composer dependencies
+      run: composer install --no-dev --optimize-autoloader --no-interaction
+
+    - name: Install NPM dependencies
+      run: npm ci
+
+    - name: Build assets
+      run: npm run build
+
+    - name: Run tests
+      run: |
+        cp .env.example .env
+        php artisan key:generate
+        php artisan test
+
+    - name: Create deployment archive
+      run: |
+        tar -czf deployment.tar.gz \
+          --exclude='.git' \
+          --exclude='node_modules' \
+          --exclude='.env' \
+          --exclude='storage/logs/*' \
+          --exclude='storage/framework/cache/*' \
+          --exclude='storage/framework/sessions/*' \
+          --exclude='storage/framework/views/*' \
+          --exclude='tests' \
+          --exclude='.github' \
+          .
+
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          # Set variables
+          APP_NAME="referral-app"
+          DEPLOY_PATH="/var/www/$APP_NAME"
+          CURRENT_PATH="$DEPLOY_PATH/current"
+          RELEASES_PATH="$DEPLOY_PATH/releases"
+          SHARED_PATH="$DEPLOY_PATH/shared"
+          RELEASE_NAME=$(date +%Y%m%d%H%M%S)
+          RELEASE_PATH="$RELEASES_PATH/$RELEASE_NAME"
+          
+          # Create directory structure
+          mkdir -p $RELEASES_PATH $SHARED_PATH/storage/logs $SHARED_PATH/storage/framework/{cache,sessions,views} $SHARED_PATH/storage/app
+          
+          # Create release directory
+          mkdir -p $RELEASE_PATH
+          
+          echo "Deploying release: $RELEASE_NAME"
+
+    - name: Upload and extract files
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "deployment.tar.gz"
+        target: "/tmp/"
+
+    - name: Complete deployment
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          # Set variables
+          APP_NAME="referral-app"
+          DEPLOY_PATH="/var/www/$APP_NAME"
+          CURRENT_PATH="$DEPLOY_PATH/current"
+          RELEASES_PATH="$DEPLOY_PATH/releases"
+          SHARED_PATH="$DEPLOY_PATH/shared"
+          RELEASE_NAME=$(date +%Y%m%d%H%M%S)
+          RELEASE_PATH="$RELEASES_PATH/$RELEASE_NAME"
+          
+          # Extract files to release directory
+          cd $RELEASE_PATH
+          tar -xzf /tmp/deployment.tar.gz
+          rm /tmp/deployment.tar.gz
+          
+          # Create .env file from secrets
+          cat > $RELEASE_PATH/.env << 'EOF'
+          ${{ secrets.ENV_FILE }}
+          EOF
+          
+          # Create symlinks to shared directories
+          rm -rf $RELEASE_PATH/storage
+          ln -nfs $SHARED_PATH/storage $RELEASE_PATH/storage
+          
+          # Set permissions
+          chown -R www-data:www-data $RELEASE_PATH
+          chown -R www-data:www-data $SHARED_PATH
+          chmod -R 755 $RELEASE_PATH
+          chmod -R 775 $SHARED_PATH/storage
+          
+          # Laravel setup
+          cd $RELEASE_PATH
+          php artisan key:generate --force
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          
+          # Run database migrations
+          php artisan migrate --force
+          
+          # Update current symlink atomically
+          ln -nfs $RELEASE_PATH $CURRENT_PATH
+          
+          # Restart services
+          sudo systemctl reload nginx
+          sudo supervisorctl restart laravel-worker:*
+          
+          # Clean up old releases (keep last 5)
+          cd $RELEASES_PATH
+          ls -t | tail -n +6 | xargs rm -rf
+          
+          echo "Deployment completed successfully!"
+          echo "Application is now live at: http://${{ secrets.HOST }}"
+
+    - name: Health check
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          # Wait a moment for services to start
+          sleep 5
+          
+          # Check if the application is responding
+          if curl -f -s http://localhost > /dev/null; then
+            echo "✅ Application is responding correctly"
+          else
+            echo "❌ Application health check failed"
+            exit 1
+          fi
+          
+          # Check queue workers
+          if sudo supervisorctl status laravel-worker:* | grep -q RUNNING; then
+            echo "✅ Queue workers are running"
+          else
+            echo "⚠️  Queue workers may not be running properly"
+          fi
