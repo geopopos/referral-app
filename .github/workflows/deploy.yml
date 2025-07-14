@@ -198,6 +198,39 @@ jobs:
           php artisan route:cache
           php artisan view:cache
           
+          # Create database if it doesn't exist
+          echo "🔧 Creating database if it doesn't exist..."
+          export PGPASSWORD="$DB_PASSWORD"
+          
+          # First test connection to defaultdb
+          if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d defaultdb -c "SELECT 1;" >/dev/null 2>&1; then
+            echo "✅ Successfully connected to PostgreSQL server"
+            
+            # Check if referral_app database exists
+            DB_EXISTS=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d defaultdb -tAc "SELECT 1 FROM pg_database WHERE datname='referral_app';" 2>/dev/null)
+            
+            if [ "$DB_EXISTS" = "1" ]; then
+              echo "✅ Database 'referral_app' already exists"
+            else
+              echo "🔧 Creating database 'referral_app'..."
+              if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d defaultdb -c "CREATE DATABASE referral_app;" 2>/dev/null; then
+                echo "✅ Database 'referral_app' created successfully"
+              else
+                echo "❌ Failed to create database 'referral_app'"
+                echo "This might be due to permissions or the database already existing"
+              fi
+            fi
+          else
+            echo "❌ Failed to connect to PostgreSQL server"
+            echo "Connection details:"
+            echo "Host: $DB_HOST"
+            echo "Port: $DB_PORT"
+            echo "Username: $DB_USERNAME"
+            echo "This will cause the migration to fail"
+          fi
+          
+          unset PGPASSWORD
+          
           # Run database migrations
           php artisan migrate --force
           
