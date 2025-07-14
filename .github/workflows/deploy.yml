@@ -46,21 +46,29 @@ jobs:
 
     - name: Create deployment archive
       run: |
-        # Wait a moment for any build processes to complete
-        sleep 2
+        # Clear any cache files that might change during archiving
+        rm -f .phpunit.result.cache
+        php artisan config:clear || true
+        php artisan cache:clear || true
+        php artisan view:clear || true
+        php artisan route:clear || true
+        
+        # Wait for any remaining processes to complete
+        sleep 3
         
         # Debug: Show current directory and files
         echo "Current directory: $(pwd)"
         echo "Files in current directory:"
         ls -la
         
-        # Create a simple exclude file for better compatibility
+        # Create comprehensive exclude file
         cat > .tarignore << 'EOF'
         .git
         .github
         node_modules
         .env
         .env.*
+        .phpunit.result.cache
         storage/logs
         storage/framework/cache
         storage/framework/sessions
@@ -68,16 +76,18 @@ jobs:
         storage/framework/testing
         bootstrap/cache
         tests
+        vendor
         *.log
         *.tmp
+        *.cache
         .DS_Store
         Thumbs.db
         deployment.tar.gz
         .tarignore
         EOF
         
-        # Create archive using exclude-from file (more reliable)
-        tar -czf deployment.tar.gz --exclude-from=.tarignore .
+        # Create archive with flags to handle changing files gracefully
+        tar --ignore-failed-read --warning=no-file-changed -czf deployment.tar.gz --exclude-from=.tarignore .
         
         # Verify archive was created
         if [ -f deployment.tar.gz ]; then
@@ -157,8 +167,11 @@ jobs:
           chmod -R 755 $RELEASE_PATH
           chmod -R 775 $SHARED_PATH/storage
           
-          # Laravel setup
+          # Install Composer dependencies on server
           cd $RELEASE_PATH
+          composer install --no-dev --optimize-autoloader --no-interaction
+          
+          # Laravel setup
           php artisan key:generate --force
           php artisan config:cache
           php artisan route:cache
