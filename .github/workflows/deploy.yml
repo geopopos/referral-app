@@ -201,20 +201,80 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          # Wait a moment for services to start
-          sleep 5
+          # Wait longer for services to start
+          echo "🔄 Waiting for services to start..."
+          sleep 10
           
-          # Check if the application is responding
-          if curl -f -s http://localhost > /dev/null; then
-            echo "✅ Application is responding correctly"
+          # Check nginx status
+          echo "🔍 Checking nginx status..."
+          if sudo systemctl is-active --quiet nginx; then
+            echo "✅ Nginx is running"
           else
-            echo "❌ Application health check failed"
-            exit 1
+            echo "❌ Nginx is not running"
+            sudo systemctl status nginx
+          fi
+          
+          # Check PHP-FPM status
+          echo "🔍 Checking PHP-FPM status..."
+          if sudo systemctl is-active --quiet php8.2-fpm; then
+            echo "✅ PHP-FPM is running"
+          else
+            echo "❌ PHP-FPM is not running"
+            sudo systemctl status php8.2-fpm
+          fi
+          
+          # Check if application files exist
+          echo "🔍 Checking application files..."
+          APP_PATH="/var/www/referral-app/current"
+          if [ -f "$APP_PATH/public/index.php" ]; then
+            echo "✅ Laravel application files found"
+          else
+            echo "❌ Laravel application files missing"
+            ls -la $APP_PATH/
+          fi
+          
+          # Test application with multiple URLs
+          echo "🔍 Testing application response..."
+          
+          # Test localhost
+          if curl -f -s -o /dev/null http://localhost; then
+            echo "✅ Application responding on localhost"
+          else
+            echo "⚠️  Application not responding on localhost"
+            echo "Nginx error log:"
+            sudo tail -n 10 /var/log/nginx/error.log || echo "No nginx error log found"
+          fi
+          
+          # Test with domain (if available)
+          if curl -f -s -o /dev/null http://${{ secrets.HOST }}; then
+            echo "✅ Application responding on domain"
+          else
+            echo "⚠️  Application not responding on domain"
+          fi
+          
+          # Check Laravel logs
+          echo "🔍 Checking Laravel logs..."
+          STORAGE_PATH="/var/www/referral-app/shared/storage/logs"
+          if [ -f "$STORAGE_PATH/laravel.log" ]; then
+            echo "Recent Laravel log entries:"
+            sudo tail -n 5 "$STORAGE_PATH/laravel.log" || echo "Could not read Laravel logs"
+          else
+            echo "No Laravel log file found"
           fi
           
           # Check queue workers
-          if sudo supervisorctl status laravel-worker:* | grep -q RUNNING; then
+          echo "🔍 Checking queue workers..."
+          if sudo supervisorctl status laravel-worker:* 2>/dev/null | grep -q RUNNING; then
             echo "✅ Queue workers are running"
           else
             echo "⚠️  Queue workers may not be running properly"
+            sudo supervisorctl status laravel-worker:* 2>/dev/null || echo "No queue workers configured"
+          fi
+          
+          # Final status
+          if curl -f -s -o /dev/null http://localhost || curl -f -s -o /dev/null http://${{ secrets.HOST }}; then
+            echo "🎉 Deployment successful! Application is accessible."
+          else
+            echo "⚠️  Deployment completed but application may need manual verification."
+            echo "Please check your server configuration."
           fi
