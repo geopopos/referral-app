@@ -114,6 +114,9 @@ jobs:
           RELEASE_NAME=$(date +%Y%m%d%H%M%S)
           RELEASE_PATH="$RELEASES_PATH/$RELEASE_NAME"
           
+          # Store release name for subsequent steps
+          echo $RELEASE_NAME > /tmp/release_name.txt
+          
           # Create directory structure
           mkdir -p $RELEASES_PATH $SHARED_PATH/storage/logs $SHARED_PATH/storage/framework/{cache,sessions,views} $SHARED_PATH/storage/app
           
@@ -121,6 +124,7 @@ jobs:
           mkdir -p $RELEASE_PATH
           
           echo "Deploying release: $RELEASE_NAME"
+          echo "Release path: $RELEASE_PATH"
 
     - name: Upload and extract files
       uses: appleboy/scp-action@v0.1.7
@@ -144,8 +148,21 @@ jobs:
           CURRENT_PATH="$DEPLOY_PATH/current"
           RELEASES_PATH="$DEPLOY_PATH/releases"
           SHARED_PATH="$DEPLOY_PATH/shared"
-          RELEASE_NAME=$(date +%Y%m%d%H%M%S)
+          
+          # Read the release name from the previous step
+          RELEASE_NAME=$(cat /tmp/release_name.txt)
           RELEASE_PATH="$RELEASES_PATH/$RELEASE_NAME"
+          
+          echo "Completing deployment for release: $RELEASE_NAME"
+          echo "Release path: $RELEASE_PATH"
+          
+          # Verify release directory exists
+          if [ ! -d "$RELEASE_PATH" ]; then
+            echo "❌ Release directory does not exist: $RELEASE_PATH"
+            echo "Available releases:"
+            ls -la $RELEASES_PATH/
+            exit 1
+          fi
           
           # Extract files to release directory
           cd $RELEASE_PATH
@@ -226,11 +243,30 @@ jobs:
           # Check if application files exist
           echo "🔍 Checking application files..."
           APP_PATH="/var/www/referral-app/current"
+          
+          # Check if current symlink exists
+          if [ -L "$APP_PATH" ]; then
+            echo "✅ Current symlink exists"
+            echo "Symlink target: $(readlink $APP_PATH)"
+          else
+            echo "❌ Current symlink missing"
+            echo "Contents of /var/www/referral-app/:"
+            ls -la /var/www/referral-app/
+          fi
+          
+          # Check if Laravel files exist
           if [ -f "$APP_PATH/public/index.php" ]; then
             echo "✅ Laravel application files found"
+            echo "Application structure:"
+            ls -la $APP_PATH/
           else
             echo "❌ Laravel application files missing"
-            ls -la $APP_PATH/
+            if [ -d "$APP_PATH" ]; then
+              echo "Directory contents:"
+              ls -la $APP_PATH/
+            else
+              echo "Application path does not exist"
+            fi
           fi
           
           # Test application with multiple URLs
