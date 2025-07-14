@@ -178,11 +178,15 @@ jobs:
           rm -rf $RELEASE_PATH/storage
           ln -nfs $SHARED_PATH/storage $RELEASE_PATH/storage
           
+          # Create bootstrap cache directory (required for Laravel)
+          mkdir -p $RELEASE_PATH/bootstrap/cache
+          
           # Set permissions
           chown -R www-data:www-data $RELEASE_PATH
           chown -R www-data:www-data $SHARED_PATH
           chmod -R 755 $RELEASE_PATH
           chmod -R 775 $SHARED_PATH/storage
+          chmod -R 775 $RELEASE_PATH/bootstrap/cache
           
           # Install Composer dependencies on server
           cd $RELEASE_PATH
@@ -362,6 +366,14 @@ jobs:
             else
               echo "❌ Storage directory is not writable"
               echo "Run: chmod -R 775 storage"
+            fi
+            
+            # Check bootstrap cache directory
+            if [ -d "$APP_PATH/bootstrap/cache" ] && [ -w "$APP_PATH/bootstrap/cache" ]; then
+              echo "✅ Bootstrap cache directory exists and is writable"
+            else
+              echo "❌ Bootstrap cache directory missing or not writable"
+              echo "Run: mkdir -p bootstrap/cache && chmod -R 775 bootstrap/cache"
             fi
             
             echo ""
