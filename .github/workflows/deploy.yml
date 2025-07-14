@@ -49,26 +49,44 @@ jobs:
         # Wait a moment for any build processes to complete
         sleep 2
         
-        # Create archive with better exclusions and handle changing files
-        tar --warning=no-file-changed -czf deployment.tar.gz \
-          --exclude='.git' \
-          --exclude='.github' \
-          --exclude='node_modules' \
-          --exclude='.env' \
-          --exclude='.env.*' \
-          --exclude='storage/logs' \
-          --exclude='storage/framework/cache' \
-          --exclude='storage/framework/sessions' \
-          --exclude='storage/framework/views' \
-          --exclude='storage/framework/testing' \
-          --exclude='bootstrap/cache' \
-          --exclude='tests' \
-          --exclude='*.log' \
-          --exclude='*.tmp' \
-          --exclude='.DS_Store' \
-          --exclude='Thumbs.db' \
-          --exclude='deployment.tar.gz' \
-          .
+        # Debug: Show current directory and files
+        echo "Current directory: $(pwd)"
+        echo "Files in current directory:"
+        ls -la
+        
+        # Create a simple exclude file for better compatibility
+        cat > .tarignore << 'EOF'
+        .git
+        .github
+        node_modules
+        .env
+        .env.*
+        storage/logs
+        storage/framework/cache
+        storage/framework/sessions
+        storage/framework/views
+        storage/framework/testing
+        bootstrap/cache
+        tests
+        *.log
+        *.tmp
+        .DS_Store
+        Thumbs.db
+        deployment.tar.gz
+        .tarignore
+        EOF
+        
+        # Create archive using exclude-from file (more reliable)
+        tar -czf deployment.tar.gz --exclude-from=.tarignore .
+        
+        # Verify archive was created
+        if [ -f deployment.tar.gz ]; then
+          echo "✅ Archive created successfully"
+          ls -lh deployment.tar.gz
+        else
+          echo "❌ Archive creation failed"
+          exit 1
+        fi
 
     - name: Deploy to server
       uses: appleboy/ssh-action@v1.0.3
