@@ -32,12 +32,12 @@ chmod +x scripts/prepare-deployment.sh
 ./scripts/prepare-deployment.sh
 ```
 
-### Step 2: Set Up Your VPS (138.197.67.195)
+### Step 2: Set Up Your VPS (165.227.66.174)
 **⚠️ IMPORTANT: Run this ON YOUR VPS, not locally!**
 
 ```bash
 # SSH to your VPS as root
-ssh root@138.197.67.195
+ssh root@165.227.66.174
 
 # Download and run setup script
 wget https://raw.githubusercontent.com/your-username/your-repo/main/scripts/server-setup.sh
@@ -62,7 +62,7 @@ Go to GitHub → Settings → Secrets and variables → Actions:
 
 | Secret Name | Value |
 |-------------|-------|
-| `HOST` | `138.197.67.195` |
+| `HOST` | `165.227.66.174` |
 | `USERNAME` | `deploy` |
 | `SSH_PRIVATE_KEY` | SSH private key from deployment-info.txt |
 | `ENV_FILE` | Contents of your customized .env.production |
@@ -98,9 +98,9 @@ Your webhook system will work perfectly with:
 ## 🌐 Access Your App
 
 After deployment, your app will be available at:
-- **HTTP:** http://138.197.67.195
-- **Admin Panel:** http://138.197.67.195/admin
-- **API:** http://138.197.67.195/api
+- **HTTP:** http://165.227.66.174
+- **Admin Panel:** http://165.227.66.174/admin
+- **API:** http://165.227.66.174/api
 
 ## 📧 Email Configuration
 
@@ -143,7 +143,7 @@ MAIL_ENCRYPTION=tls
 ### Check Deployment Status
 ```bash
 # SSH to server
-ssh deploy@138.197.67.195
+ssh deploy@165.227.66.174
 
 # Check services
 sudo systemctl status nginx php8.2-fpm postgresql redis-server supervisor
@@ -164,7 +164,7 @@ ls -la /var/backups/referral-app/
 
 When you get a domain name:
 
-1. **Point domain to server:** Create A record → 138.197.67.195
+1. **Point domain to server:** Create A record → 165.227.66.174
 2. **Update Nginx:** Change server_name in `/etc/nginx/sites-available/referral-app`
 3. **Get SSL:** `sudo certbot --nginx -d yourdomain.com`
 4. **Update .env:** Change APP_URL and SANCTUM_STATEFUL_DOMAINS
@@ -243,7 +243,7 @@ Every push to your main branch will automatically deploy your changes with zero 
 
 ---
 
-**Server IP:** 138.197.67.195  
+**Server IP:** 165.227.66.174  
 **Database:** PostgreSQL  
 **Queue System:** Redis + Supervisor  
 **Web Server:** Nginx + PHP 8.2  

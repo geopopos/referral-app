@@ -13,7 +13,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-SERVER_IP="138.197.67.195"
+SERVER_IP="165.227.66.174"
 APP_NAME="referral-app"
 DEPLOY_USER="deploy"
 WEB_ROOT="/var/www/$APP_NAME"
@@ -64,8 +64,8 @@ echo -e "${YELLOW}Detected OS: $OS${NC}"
 # Check if this is a supported system
 if [[ "$(uname)" = "Darwin" ]]; then
     echo -e "${RED}❌ This script is designed for Linux VPS servers, not macOS${NC}"
-    echo -e "${YELLOW}Please run this script on your Ubuntu 22.04 VPS at 138.197.67.195${NC}"
-    echo -e "${YELLOW}SSH to your VPS first: ssh root@138.197.67.195${NC}"
+    echo -e "${YELLOW}Please run this script on your Ubuntu 22.04 VPS at 165.227.66.174${NC}"
+    echo -e "${YELLOW}SSH to your VPS first: ssh root@165.227.66.174${NC}"
     exit 1
 fi
 
@@ -282,7 +282,7 @@ server {
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_proxied expired no-cache no-store private must-revalidate auth;
+    gzip_proxied expired no-cache no-store private auth;
     gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss;
 
     location / {
