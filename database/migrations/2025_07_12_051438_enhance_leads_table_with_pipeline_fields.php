@@ -38,11 +38,25 @@ return new class extends Migration
             $table->index('sale_closed_at');
         });
         
-        // Update status enum using raw SQL for PostgreSQL compatibility
-        DB::statement("ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_status_check");
-        DB::statement("ALTER TABLE leads ALTER COLUMN status TYPE VARCHAR(255)");
-        DB::statement("ALTER TABLE leads ADD CONSTRAINT leads_status_check CHECK (status IN ('lead', 'appointment_scheduled', 'appointment_completed', 'offer_made', 'sale', 'lost'))");
-        DB::statement("ALTER TABLE leads ALTER COLUMN status SET DEFAULT 'lead'");
+        // Update status enum using database-specific SQL
+        $driver = DB::getDriverName();
+        
+        if ($driver === 'pgsql') {
+            // PostgreSQL-specific syntax
+            DB::statement("ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_status_check");
+            DB::statement("ALTER TABLE leads ALTER COLUMN status TYPE VARCHAR(255)");
+            DB::statement("ALTER TABLE leads ADD CONSTRAINT leads_status_check CHECK (status IN ('lead', 'appointment_scheduled', 'appointment_completed', 'offer_made', 'sale', 'lost'))");
+            DB::statement("ALTER TABLE leads ALTER COLUMN status SET DEFAULT 'lead'");
+        } elseif ($driver === 'mysql') {
+            // MySQL-specific syntax
+            DB::statement("ALTER TABLE leads MODIFY COLUMN status ENUM('lead', 'appointment_scheduled', 'appointment_completed', 'offer_made', 'sale', 'lost') DEFAULT 'lead'");
+        } else {
+            // SQLite and other databases - use Laravel's schema builder
+            // SQLite doesn't support enum constraints well, so we'll just change the column type
+            Schema::table('leads', function (Blueprint $table) {
+                $table->string('status', 255)->default('lead')->change();
+            });
+        }
     }
 
     /**
