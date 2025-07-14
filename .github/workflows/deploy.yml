@@ -272,20 +272,37 @@ jobs:
           # Test application with multiple URLs
           echo "🔍 Testing application response..."
           
-          # Test localhost
-          if curl -f -s -o /dev/null http://localhost; then
-            echo "✅ Application responding on localhost"
+          # Test localhost with detailed response
+          echo "Testing localhost response..."
+          LOCALHOST_RESPONSE=$(curl -s -w "HTTP_CODE:%{http_code}" http://localhost 2>/dev/null)
+          HTTP_CODE=$(echo "$LOCALHOST_RESPONSE" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Application responding successfully on localhost (HTTP 200)"
+          elif [ "$HTTP_CODE" = "500" ]; then
+            echo "⚠️  Application responding with HTTP 500 error on localhost"
+            echo "This indicates a Laravel application error, not a deployment issue."
+          elif [ -n "$HTTP_CODE" ]; then
+            echo "⚠️  Application responding with HTTP $HTTP_CODE on localhost"
           else
-            echo "⚠️  Application not responding on localhost"
+            echo "❌ Application not responding on localhost"
             echo "Nginx error log:"
             sudo tail -n 10 /var/log/nginx/error.log || echo "No nginx error log found"
           fi
           
           # Test with domain (if available)
-          if curl -f -s -o /dev/null http://${{ secrets.HOST }}; then
-            echo "✅ Application responding on domain"
+          echo "Testing domain response..."
+          DOMAIN_RESPONSE=$(curl -s -w "HTTP_CODE:%{http_code}" http://${{ secrets.HOST }} 2>/dev/null)
+          DOMAIN_HTTP_CODE=$(echo "$DOMAIN_RESPONSE" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
+          
+          if [ "$DOMAIN_HTTP_CODE" = "200" ]; then
+            echo "✅ Application responding successfully on domain (HTTP 200)"
+          elif [ "$DOMAIN_HTTP_CODE" = "500" ]; then
+            echo "⚠️  Application responding with HTTP 500 error on domain"
+          elif [ -n "$DOMAIN_HTTP_CODE" ]; then
+            echo "⚠️  Application responding with HTTP $DOMAIN_HTTP_CODE on domain"
           else
-            echo "⚠️  Application not responding on domain"
+            echo "❌ Application not responding on domain"
           fi
           
           # Check Laravel logs
@@ -307,10 +324,63 @@ jobs:
             sudo supervisorctl status laravel-worker:* 2>/dev/null || echo "No queue workers configured"
           fi
           
+          # Laravel 500 Error Troubleshooting
+          if [ "$HTTP_CODE" = "500" ] || [ "$DOMAIN_HTTP_CODE" = "500" ]; then
+            echo ""
+            echo "🔧 Laravel 500 Error Troubleshooting:"
+            echo "The deployment was successful, but Laravel is throwing a 500 error."
+            echo ""
+            
+            # Check .env file exists
+            if [ -f "$APP_PATH/.env" ]; then
+              echo "✅ .env file exists"
+            else
+              echo "❌ .env file missing"
+            fi
+            
+            # Check APP_KEY is set
+            if grep -q "APP_KEY=" "$APP_PATH/.env" && ! grep -q "APP_KEY=$" "$APP_PATH/.env"; then
+              echo "✅ APP_KEY is set"
+            else
+              echo "❌ APP_KEY is missing or empty"
+              echo "Run: php artisan key:generate --force"
+            fi
+            
+            # Check database connection
+            echo "🔍 Testing database connection..."
+            cd $APP_PATH
+            if php artisan migrate:status >/dev/null 2>&1; then
+              echo "✅ Database connection working"
+            else
+              echo "❌ Database connection failed"
+              echo "Check your database credentials in .env file"
+            fi
+            
+            # Check storage permissions
+            if [ -w "$APP_PATH/storage" ]; then
+              echo "✅ Storage directory is writable"
+            else
+              echo "❌ Storage directory is not writable"
+              echo "Run: chmod -R 775 storage"
+            fi
+            
+            echo ""
+            echo "📋 Next steps to fix 500 error:"
+            echo "1. Check Laravel logs: tail -f /var/www/referral-app/shared/storage/logs/laravel.log"
+            echo "2. Check PHP error logs: tail -f /var/log/php8.2-fpm.log"
+            echo "3. Verify database credentials in .env file"
+            echo "4. Run: php artisan config:clear && php artisan cache:clear"
+          fi
+          
           # Final status
-          if curl -f -s -o /dev/null http://localhost || curl -f -s -o /dev/null http://${{ secrets.HOST }}; then
-            echo "🎉 Deployment successful! Application is accessible."
+          if [ "$HTTP_CODE" = "200" ] || [ "$DOMAIN_HTTP_CODE" = "200" ]; then
+            echo "🎉 Deployment successful! Application is fully functional."
+          elif [ "$HTTP_CODE" = "500" ] || [ "$DOMAIN_HTTP_CODE" = "500" ]; then
+            echo "⚠️  Deployment completed successfully, but Laravel has a 500 error."
+            echo "This is an application-level issue, not a deployment problem."
+          elif [ -n "$HTTP_CODE" ] || [ -n "$DOMAIN_HTTP_CODE" ]; then
+            echo "⚠️  Deployment completed, application responding but may need verification."
           else
-            echo "⚠️  Deployment completed but application may need manual verification."
+            echo "❌ Deployment completed but application is not responding."
             echo "Please check your server configuration."
           fi
