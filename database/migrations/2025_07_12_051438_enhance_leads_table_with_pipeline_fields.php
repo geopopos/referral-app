@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -12,9 +13,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('leads', function (Blueprint $table) {
-            // Update status enum to include new pipeline stages
-            $table->enum('status', ['lead', 'appointment_scheduled', 'appointment_completed', 'offer_made', 'sale', 'lost'])->default('lead')->change();
-            
             // Add pipeline tracking fields
             $table->timestamp('appointment_scheduled_at')->nullable()->after('status');
             $table->timestamp('appointment_completed_at')->nullable()->after('appointment_scheduled_at');
@@ -39,6 +37,12 @@ return new class extends Migration
             $table->index('offer_made_at');
             $table->index('sale_closed_at');
         });
+        
+        // Update status enum using raw SQL for PostgreSQL compatibility
+        DB::statement("ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_status_check");
+        DB::statement("ALTER TABLE leads ALTER COLUMN status TYPE VARCHAR(255)");
+        DB::statement("ALTER TABLE leads ADD CONSTRAINT leads_status_check CHECK (status IN ('lead', 'appointment_scheduled', 'appointment_completed', 'offer_made', 'sale', 'lost'))");
+        DB::statement("ALTER TABLE leads ALTER COLUMN status SET DEFAULT 'lead'");
     }
 
     /**
