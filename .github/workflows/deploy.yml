@@ -192,8 +192,14 @@ jobs:
           cd $RELEASE_PATH
           composer install --no-dev --optimize-autoloader --no-interaction
           
-          # Laravel setup
-          php artisan key:generate --force
+          # Laravel setup - FIXED: Only generate key if missing
+          if ! grep -q "APP_KEY=base64:" $RELEASE_PATH/.env || grep -q "APP_KEY=$" $RELEASE_PATH/.env; then
+            echo "🔧 APP_KEY missing or empty, generating new key..."
+            php artisan key:generate --force
+          else
+            echo "✅ APP_KEY already exists, preserving it"
+          fi
+          
           php artisan config:cache
           php artisan route:cache
           php artisan view:cache
