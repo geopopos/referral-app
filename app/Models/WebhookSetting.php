@@ -42,6 +42,7 @@ class WebhookSetting extends Model
      * Available webhook events
      */
     public const AVAILABLE_EVENTS = [
+        'user.created' => 'User Registered',
         'lead.created' => 'Lead Created',
         'lead.updated' => 'Lead Updated',
         'lead.status_changed' => 'Lead Status Changed',
