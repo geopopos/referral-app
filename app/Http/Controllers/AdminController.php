@@ -572,65 +572,55 @@ class AdminController extends Controller
     {
         $webhookService = app(WebhookService::class);
         
-        // Get or create webhook settings
-        $settings = WebhookSetting::first();
-        if (!$settings) {
-            $settings = WebhookSetting::create([
-                'url' => '',
-                'auth_type' => 'none',
-                'auth_credentials' => [],
-                'enabled_events' => [],
-                'is_active' => false,
-                'max_retry_attempts' => 3,
-                'retry_delays' => [60, 300, 900],
-            ]);
-        }
+        // Get all webhook settings
+        $webhookSettings = WebhookSetting::orderBy('priority')->orderBy('name')->get();
 
         // Get recent webhook logs
         $logs = WebhookLog::with('webhookSetting')
             ->latest()
             ->paginate(20);
 
-        // Get webhook statistics
-        $stats = $webhookService->getWebhookStats($settings, 30);
-
-        // Available events and auth types
-        $availableEvents = [
-            'lead.created' => 'Lead Created',
-            'lead.updated' => 'Lead Updated',
-            'lead.status_changed' => 'Lead Status Changed',
-            'commission.created' => 'Commission Created',
-            'commission.updated' => 'Commission Updated',
-            'commission.approved' => 'Commission Approved',
-            'commission.paid' => 'Commission Paid',
+        // Get overall statistics across all webhooks
+        $overallStats = [
+            'total_configurations' => $webhookSettings->count(),
+            'active_configurations' => $webhookSettings->where('is_active', true)->count(),
+            'total_deliveries' => WebhookLog::count(),
+            'successful_deliveries' => WebhookLog::where('status', 'success')->count(),
+            'failed_deliveries' => WebhookLog::where('status', 'failed')->count(),
+            'pending_deliveries' => WebhookLog::where('status', 'pending')->count(),
         ];
 
-        $authTypes = [
-            'none' => 'No Authentication',
-            'bearer' => 'Bearer Token',
-            'basic' => 'Basic Authentication',
-            'custom' => 'Custom Headers',
-        ];
+        // Get statistics for each webhook configuration
+        $webhookStats = [];
+        foreach ($webhookSettings as $setting) {
+            $webhookStats[$setting->id] = $webhookService->getWebhookStats($setting, 30);
+        }
+
+        // Get webhook settings grouped by events
+        $eventGroups = WebhookSetting::getGroupedByEvents();
 
         return view('admin.webhooks', compact(
-            'settings',
+            'webhookSettings',
             'logs',
-            'stats',
-            'availableEvents',
-            'authTypes'
+            'overallStats',
+            'webhookStats',
+            'eventGroups'
         ));
     }
 
     /**
-     * Update webhook settings.
+     * Store a new webhook configuration.
      */
-    public function updateWebhookSettings(Request $request): RedirectResponse
+    public function storeWebhookSetting(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:webhook_settings,name',
+            'description' => 'nullable|string|max:1000',
+            'priority' => 'required|integer|min:0',
             'url' => 'required|url|max:500',
             'auth_type' => 'required|in:none,bearer,basic,custom',
             'auth_credentials' => 'nullable|array',
-            'enabled_events' => 'nullable|array',
+            'enabled_events' => 'required|array|min:1',
             'enabled_events.*' => 'string|in:lead.created,lead.updated,lead.status_changed,commission.created,commission.updated,commission.approved,commission.paid',
             'is_active' => 'boolean',
             'max_retry_attempts' => 'required|integer|min:0|max:10',
@@ -639,27 +629,81 @@ class AdminController extends Controller
             'secret_key' => 'nullable|string|max:255',
         ]);
 
-        // Get or create webhook settings
-        $settings = WebhookSetting::first();
-        if (!$settings) {
-            $settings = new WebhookSetting();
-        }
-
-        // Update settings
-        $settings->fill([
+        $webhookSetting = WebhookSetting::create([
+            'name' => $validated['name'],
+            'description' => $validated['description'],
+            'priority' => $validated['priority'],
             'url' => $validated['url'],
             'auth_type' => $validated['auth_type'],
             'auth_credentials' => $validated['auth_credentials'] ?? [],
-            'enabled_events' => $validated['enabled_events'] ?? [],
+            'enabled_events' => $validated['enabled_events'],
             'is_active' => $request->boolean('is_active'),
             'max_retry_attempts' => $validated['max_retry_attempts'],
             'retry_delays' => $validated['retry_delays'] ?? [60, 300, 900],
             'secret_key' => $validated['secret_key'],
         ]);
 
-        $settings->save();
+        return back()->with('success', 'Webhook configuration created successfully.');
+    }
 
-        return back()->with('success', 'Webhook settings updated successfully.');
+    /**
+     * Update an existing webhook configuration.
+     */
+    public function updateWebhookSetting(Request $request, WebhookSetting $webhookSetting): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:webhook_settings,name,' . $webhookSetting->id,
+            'description' => 'nullable|string|max:1000',
+            'priority' => 'required|integer|min:0',
+            'url' => 'required|url|max:500',
+            'auth_type' => 'required|in:none,bearer,basic,custom',
+            'auth_credentials' => 'nullable|array',
+            'enabled_events' => 'required|array|min:1',
+            'enabled_events.*' => 'string|in:lead.created,lead.updated,lead.status_changed,commission.created,commission.updated,commission.approved,commission.paid',
+            'is_active' => 'boolean',
+            'max_retry_attempts' => 'required|integer|min:0|max:10',
+            'retry_delays' => 'nullable|array',
+            'retry_delays.*' => 'integer|min:1',
+            'secret_key' => 'nullable|string|max:255',
+        ]);
+
+        $webhookSetting->update([
+            'name' => $validated['name'],
+            'description' => $validated['description'],
+            'priority' => $validated['priority'],
+            'url' => $validated['url'],
+            'auth_type' => $validated['auth_type'],
+            'auth_credentials' => $validated['auth_credentials'] ?? [],
+            'enabled_events' => $validated['enabled_events'],
+            'is_active' => $request->boolean('is_active'),
+            'max_retry_attempts' => $validated['max_retry_attempts'],
+            'retry_delays' => $validated['retry_delays'] ?? [60, 300, 900],
+            'secret_key' => $validated['secret_key'],
+        ]);
+
+        return back()->with('success', 'Webhook configuration updated successfully.');
+    }
+
+    /**
+     * Delete a webhook configuration.
+     */
+    public function deleteWebhookSetting(WebhookSetting $webhookSetting): RedirectResponse
+    {
+        $name = $webhookSetting->name;
+        $webhookSetting->delete();
+
+        return back()->with('success', "Webhook configuration '{$name}' deleted successfully.");
+    }
+
+    /**
+     * Toggle webhook configuration active status.
+     */
+    public function toggleWebhookSetting(WebhookSetting $webhookSetting): RedirectResponse
+    {
+        $webhookSetting->update(['is_active' => !$webhookSetting->is_active]);
+        
+        $status = $webhookSetting->is_active ? 'activated' : 'deactivated';
+        return back()->with('success', "Webhook configuration '{$webhookSetting->name}' {$status} successfully.");
     }
 
     /**

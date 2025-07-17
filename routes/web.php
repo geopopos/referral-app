@@ -66,7 +66,10 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     
     // Webhook management routes
     Route::get('/webhooks', [AdminController::class, 'webhooks'])->name('webhooks');
-    Route::post('/webhooks/settings', [AdminController::class, 'updateWebhookSettings'])->name('webhooks.settings.update');
+    Route::post('/webhooks', [AdminController::class, 'storeWebhookSetting'])->name('webhooks.store');
+    Route::patch('/webhooks/{webhookSetting}', [AdminController::class, 'updateWebhookSetting'])->name('webhooks.update');
+    Route::delete('/webhooks/{webhookSetting}', [AdminController::class, 'deleteWebhookSetting'])->name('webhooks.delete');
+    Route::patch('/webhooks/{webhookSetting}/toggle', [AdminController::class, 'toggleWebhookSetting'])->name('webhooks.toggle');
     Route::post('/webhooks/test', [AdminController::class, 'testWebhook'])->name('webhooks.test');
     Route::post('/webhooks/retry-failed', [AdminController::class, 'retryFailedWebhooks'])->name('webhooks.retry-failed');
     Route::delete('/webhooks/logs/cleanup', [AdminController::class, 'cleanupWebhookLogs'])->name('webhooks.logs.cleanup');
