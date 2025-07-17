@@ -11,6 +11,9 @@ class WebhookSetting extends Model
     use HasFactory;
 
     protected $fillable = [
+        'name',
+        'description',
+        'priority',
         'url',
         'auth_type',
         'auth_credentials',
@@ -159,5 +162,94 @@ class WebhookSetting extends Model
     public function shouldRetry(int $attemptNumber): bool
     {
         return $this->is_active && $attemptNumber < $this->max_retry_attempts;
+    }
+
+    /**
+     * Scope to get active webhook settings
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope to get webhook settings for a specific event
+     */
+    public function scopeForEvent($query, string $event)
+    {
+        return $query->whereJsonContains('enabled_events', $event);
+    }
+
+    /**
+     * Scope to order by priority
+     */
+    public function scopeByPriority($query)
+    {
+        return $query->orderBy('priority')->orderBy('name');
+    }
+
+    /**
+     * Get all active webhook settings for a specific event, ordered by priority
+     */
+    public static function getActiveForEvent(string $event)
+    {
+        return static::active()
+            ->forEvent($event)
+            ->byPriority()
+            ->get();
+    }
+
+    /**
+     * Get webhook settings grouped by enabled events
+     */
+    public static function getGroupedByEvents()
+    {
+        $webhooks = static::active()->get();
+        $grouped = [];
+
+        foreach (static::AVAILABLE_EVENTS as $eventKey => $eventLabel) {
+            $grouped[$eventKey] = [
+                'label' => $eventLabel,
+                'webhooks' => $webhooks->filter(function ($webhook) use ($eventKey) {
+                    return $webhook->isEventEnabled($eventKey);
+                })->values()
+            ];
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * Validate webhook configuration
+     */
+    public function validate(): array
+    {
+        $errors = [];
+
+        if (empty($this->name)) {
+            $errors[] = 'Name is required';
+        }
+
+        if (empty($this->url)) {
+            $errors[] = 'URL is required';
+        } elseif (!filter_var($this->url, FILTER_VALIDATE_URL)) {
+            $errors[] = 'URL must be a valid URL';
+        }
+
+        if (empty($this->enabled_events)) {
+            $errors[] = 'At least one event must be enabled';
+        }
+
+        if ($this->auth_type === 'basic') {
+            if (empty($this->auth_credentials['username']) || empty($this->auth_credentials['password'])) {
+                $errors[] = 'Username and password are required for basic authentication';
+            }
+        } elseif ($this->auth_type === 'bearer') {
+            if (empty($this->auth_credentials['token'])) {
+                $errors[] = 'Token is required for bearer authentication';
+            }
+        }
+
+        return $errors;
     }
 }

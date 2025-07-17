@@ -16,29 +16,45 @@ class WebhookService
      */
     public function sendWebhook(string $eventType, array $data): void
     {
-        $webhookSetting = WebhookSetting::where('is_active', true)->first();
+        // Get all active webhook settings that have this event enabled
+        $webhookSettings = WebhookSetting::getActiveForEvent($eventType);
 
-        if (!$webhookSetting || !$webhookSetting->isEventEnabled($eventType)) {
+        if ($webhookSettings->isEmpty()) {
+            Log::info('No active webhook configurations found for event', [
+                'event_type' => $eventType,
+                'data_keys' => array_keys($data)
+            ]);
             return;
         }
 
         $payload = $this->buildPayload($eventType, $data);
-        $webhookId = Str::uuid()->toString();
 
-        // Create webhook log entry
-        $webhookLog = WebhookLog::create([
-            'webhook_setting_id' => $webhookSetting->id,
-            'event_type' => $eventType,
-            'webhook_id' => $webhookId,
-            'url' => $webhookSetting->url,
-            'payload' => $payload,
-            'status' => 'pending',
-            'attempt_number' => 1,
-            'max_attempts' => $webhookSetting->max_retry_attempts,
-        ]);
+        // Send webhook to each active configuration
+        foreach ($webhookSettings as $webhookSetting) {
+            $webhookId = Str::uuid()->toString();
 
-        // Dispatch webhook job
-        SendWebhookJob::dispatch($webhookLog->id);
+            // Create webhook log entry for this specific configuration
+            $webhookLog = WebhookLog::create([
+                'webhook_setting_id' => $webhookSetting->id,
+                'event_type' => $eventType,
+                'webhook_id' => $webhookId,
+                'url' => $webhookSetting->url,
+                'payload' => $payload,
+                'status' => 'pending',
+                'attempt_number' => 1,
+                'max_attempts' => $webhookSetting->max_retry_attempts,
+            ]);
+
+            // Dispatch webhook job for this configuration
+            SendWebhookJob::dispatch($webhookLog->id);
+
+            Log::info('Webhook queued for delivery', [
+                'webhook_setting_name' => $webhookSetting->name,
+                'event_type' => $eventType,
+                'webhook_id' => $webhookId,
+                'url' => $webhookSetting->url
+            ]);
+        }
     }
 
     /**
