@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Services\WebhookService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -86,6 +87,29 @@ class User extends Authenticatable
             if (empty($user->referral_code)) {
                 $user->referral_code = $user->generateReferralCode();
             }
+        });
+
+        static::created(function ($user) {
+            $webhookService = app(WebhookService::class);
+            
+            // Prepare webhook data
+            $webhookData = [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'referral_code' => $user->referral_code,
+                    'created_at' => $user->created_at->toISOString(),
+                ]
+            ];
+
+            // Add referrer information if user was referred
+            if ($user->referral_source && $user->referral_source !== 'direct') {
+                $webhookData['referral_source'] = $user->referral_source;
+            }
+
+            $webhookService->sendWebhook('user.created', $webhookData);
         });
     }
 
