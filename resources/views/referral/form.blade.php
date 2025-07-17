@@ -131,7 +131,6 @@
                         <div class="text-4xl font-bold mr-4">{{ $content['overall_rating']->value ?? '4.9' }}</div>
                         <div>
                             <div class="flex text-yellow-300 text-2xl mb-1">★★★★★</div>
-                            <div class="text-sm opacity-90">Based on {{ $content['total_reviews']->value ?? '247+' }} reviews</div>
                         </div>
                     </div>
                     <p class="text-lg font-medium">{{ $content['rating_tagline']->value ?? 'Trusted by contractors across Texas' }}</p>
@@ -141,7 +140,7 @@
     </section>
 
     <!-- Proof Section -->
-    <section class="py-20 px-4 bg-volume-light">
+    {{-- <section class="py-20 px-4 bg-volume-light">
         <div class="max-w-6xl mx-auto">
             <h2 class="font-poppins font-bold text-3xl md:text-4xl text-center mb-16">
                 {{ $content['proof_section_title']->value ?? 'Real Results, Real Proof' }}
@@ -172,7 +171,7 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> --}}
 
     <!-- Qualification Form Section -->
     <section id="qualification-form" class="py-20 px-4 bg-volume-light">
