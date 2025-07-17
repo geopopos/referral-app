@@ -183,6 +183,16 @@ class AdminController extends Controller
     }
 
     /**
+     * Display all leads.
+     */
+    public function partners(): View
+    {
+        $partners = User::latest()->paginate(20);
+        
+        return view('admin.partners', compact('partners'));
+    }
+
+    /**
      * Display partner details.
      */
     public function partnerDetails(User $partner): View

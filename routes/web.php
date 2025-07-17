@@ -49,6 +49,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::patch('/leads/{lead}/status', [AdminController::class, 'updateLeadStatus'])->name('leads.update-status');
     Route::get('/commissions', [AdminController::class, 'commissions'])->name('commissions');
     Route::patch('/commissions/{commission}/status', [AdminController::class, 'updateCommissionStatus'])->name('commissions.update-status');
+    Route::get('/partners', [AdminController::class, 'partners'])->name('partners');
     Route::get('/partners/{partner}', [AdminController::class, 'partnerDetails'])->name('partners.show');
     Route::get('/export/leads', [AdminController::class, 'exportLeads'])->name('export.leads');
     Route::get('/landing-page', [AdminController::class, 'landingPage'])->name('landing-page');
