@@ -24,9 +24,12 @@ class DashboardController extends Controller
         $paidCommissions = $user->getTotalCommissions('paid');
         $totalCommissions = $user->getTotalCommissions();
         
-        // Get fast-close bonuses (bonus type commissions)
+        // Get fast-close bonuses (bonus type commissions) - only for won leads
         $fastCloseBonuses = $user->commissions()
             ->where('type', 'bonus')
+            ->whereHas('lead', function ($leadQuery) {
+                $leadQuery->where('status', 'sale');
+            })
             ->sum('amount');
         
         return view('dashboard', compact(
@@ -54,11 +57,18 @@ class DashboardController extends Controller
 
     /**
      * Display partner's commissions.
+     * Only shows commissions for leads with "sale" status.
      */
     public function commissions(Request $request): View
     {
         $user = $request->user();
-        $commissions = $user->commissions()->with('lead')->latest()->paginate(15);
+        $commissions = $user->commissions()
+            ->with('lead')
+            ->whereHas('lead', function ($leadQuery) {
+                $leadQuery->where('status', 'sale');
+            })
+            ->latest()
+            ->paginate(15);
         
         return view('partner.commissions', compact('commissions'));
     }

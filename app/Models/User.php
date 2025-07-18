@@ -167,10 +167,14 @@ class User extends Authenticatable
 
     /**
      * Get total commission amount by status.
+     * Only counts commissions for leads with "sale" status.
      */
     public function getTotalCommissions(string $status = null): float
     {
-        $query = $this->commissions();
+        $query = $this->commissions()
+            ->whereHas('lead', function ($leadQuery) {
+                $leadQuery->where('status', 'sale');
+            });
         
         if ($status) {
             $query->where('status', $status);

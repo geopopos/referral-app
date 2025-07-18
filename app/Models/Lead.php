@@ -202,17 +202,8 @@ class Lead extends Model
             $this->sale_closed_at->toDateTime()
         );
 
-        // Use override amounts if set, otherwise calculate from settings
-        if ($this->commission_override_amount) {
-            $commissionAmount = $this->commission_override_amount;
-        } elseif ($this->commission_override_percentage) {
-            $commissionAmount = $this->sale_amount * ($this->commission_override_percentage / 100);
-            if ($isQuickClose) {
-                $commissionAmount += $commissionSetting->quick_close_bonus;
-            }
-        } else {
-            $commissionAmount = $commissionSetting->calculateCommission($this->sale_amount, $isQuickClose);
-        }
+        // Always use commission settings - no override logic
+        $commissionAmount = $commissionSetting->calculateCommission($this->sale_amount, $isQuickClose);
 
         Commission::create([
             'user_id' => $this->referrer->id,

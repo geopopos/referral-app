@@ -32,8 +32,16 @@ class AdminController extends Controller
     {
         $partners = User::where('role', 'partner')->withCount('leads')->get();
         $totalLeads = Lead::count();
-        $totalCommissions = Commission::sum('amount');
-        $pendingCommissions = Commission::where('status', 'pending')->sum('amount');
+        
+        // Only count commissions for leads with "sale" status
+        $totalCommissions = Commission::whereHas('lead', function ($query) {
+            $query->where('status', 'sale');
+        })->sum('amount');
+        
+        $pendingCommissions = Commission::where('status', 'pending')
+            ->whereHas('lead', function ($query) {
+                $query->where('status', 'sale');
+            })->sum('amount');
         
         return view('admin.dashboard', compact(
             'partners',
@@ -128,10 +136,16 @@ class AdminController extends Controller
 
     /**
      * Display all commissions.
+     * Only shows commissions for leads with "sale" status.
      */
     public function commissions(): View
     {
-        $commissions = Commission::with(['user', 'lead'])->latest()->paginate(20);
+        $commissions = Commission::with(['user', 'lead'])
+            ->whereHas('lead', function ($query) {
+                $query->where('status', 'sale');
+            })
+            ->latest()
+            ->paginate(20);
         
         return view('admin.commissions', compact('commissions'));
     }
