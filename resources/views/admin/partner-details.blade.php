@@ -162,7 +162,7 @@
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div>
-                                                    <div class="text-sm font-medium text-gray-900">{{ $lead->name }}</div>
+                                                    <a href="{{route('admin.leads.show', $lead->id)}}""><div class="text-sm font-medium text-gray-900 hover:text-blue-500">{{ $lead->name }}</div></a>
                                                     <div class="text-sm text-gray-500">{{ $lead->company }}</div>
                                                 </div>
                                             </td>
