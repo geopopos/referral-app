@@ -46,7 +46,6 @@
                                         <th class="w-1/6 px-3 py-3 text-left text-xs font-bold text-volume-dark uppercase tracking-wider">Lead Info</th>
                                         <th class="w-1/6 px-3 py-3 text-left text-xs font-bold text-volume-dark uppercase tracking-wider">Contact</th>
                                         <th class="w-1/6 px-3 py-3 text-left text-xs font-bold text-volume-dark uppercase tracking-wider">Referrer</th>
-                                        <th class="w-1/12 px-3 py-3 text-left text-xs font-bold text-volume-dark uppercase tracking-wider">Status</th>
                                         <th class="w-1/12 px-3 py-3 text-left text-xs font-bold text-volume-dark uppercase tracking-wider">Date</th>
                                         <th class="w-1/4 px-3 py-3 text-left text-xs font-bold text-volume-dark uppercase tracking-wider">Actions</th>
                                     </tr>
@@ -75,24 +74,6 @@
                                                 @else
                                                     <span class="text-sm text-volume-gray italic">Direct</span>
                                                 @endif
-                                            </td>
-                                            <td class="px-3 py-3">
-                                                <form action="{{ route('admin.leads.update-status', $lead) }}" method="POST" class="inline">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <select 
-                                                        name="status" 
-                                                        onchange="this.form.submit()"
-                                                        class="text-xs rounded-full px-2 py-1 font-bold border-0 cursor-pointer transition-colors w-full
-                                                            @if($lead->status === 'new') bg-blue-100 text-blue-800 hover:bg-blue-200
-                                                            @elseif($lead->status === 'qualified') bg-yellow-100 text-yellow-800 hover:bg-yellow-200
-                                                            @else bg-green-100 text-green-800 hover:bg-green-200 @endif"
-                                                    >
-                                                        <option value="new" {{ $lead->status === 'new' ? 'selected' : '' }}>New</option>
-                                                        <option value="qualified" {{ $lead->status === 'qualified' ? 'selected' : '' }}>Qualified</option>
-                                                        <option value="closed" {{ $lead->status === 'closed' ? 'selected' : '' }}>Closed</option>
-                                                    </select>
-                                                </form>
                                             </td>
                                             <td class="px-3 py-3">
                                                 <div class="text-xs text-volume-gray">
