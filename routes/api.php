@@ -18,6 +18,16 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Public routes (no authentication required)
+Route::get('/commission-settings', function () {
+    $settings = \App\Models\CommissionSetting::getActive();
+    return response()->json([
+        'commission_percentage' => $settings ? $settings->commission_percentage : 10,
+        'quick_close_bonus' => $settings ? $settings->quick_close_bonus : 250,
+        'quick_close_days' => $settings ? $settings->quick_close_days : 7,
+    ]);
+})->name('api.commission-settings');
+
 // Authentication routes
 Route::post('/auth/token', [AuthApiController::class, 'generateToken'])->name('api.auth.token');
 
