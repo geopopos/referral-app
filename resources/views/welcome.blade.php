@@ -140,38 +140,87 @@
         </div>
     </section>
 
-    <!-- Earnings Example Section -->
+    <!-- Earnings Calculator Section -->
     <section class="py-16 sm:py-20 px-4 bg-white">
         <div class="max-w-4xl mx-auto">
             <h2 class="font-poppins font-bold text-3xl md:text-4xl text-center mb-12 sm:mb-16 text-volume-dark">
-                Real Earnings Example
+                Calculate Your Earnings Potential
             </h2>
-            <div class="bg-gradient-to-r from-volume-primary to-volume-secondary text-white p-6 sm:p-8 rounded-2xl shadow-strong">
-                <div class="grid md:grid-cols-2 gap-8 items-center">
-                    <div>
-                        <h3 class="font-poppins font-semibold text-2xl mb-6">Conservative Scenario:</h3>
-                        <div class="space-y-4">
-                            <div class="flex justify-between">
-                                <span>1 contractor at $2,500/mo:</span>
-                                <span class="font-semibold">$250/mo</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>5 contractors over 10 months:</span>
-                                <span class="font-semibold">$12,500 total</span>
-                            </div>
-                            <div class="border-t border-white/30 pt-4">
-                                <div class="flex justify-between text-xl font-bold">
-                                    <span>Annual potential:</span>
-                                    <span>$15,000+</span>
-                                </div>
+            
+            <!-- Calculator Form -->
+            <div class="bg-gradient-to-r from-volume-primary to-volume-secondary text-white p-6 sm:p-8 rounded-2xl shadow-strong mb-8">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Input Controls -->
+                    <div class="space-y-6">
+                        <h3 class="font-poppins font-semibold text-2xl mb-6">Your Inputs:</h3>
+                        
+                        <!-- Referrals per month -->
+                        <div>
+                            <label for="referrals-slider" class="block text-sm font-medium mb-2">
+                                Referrals per month: <span id="referrals-display" class="font-bold">5</span>
+                            </label>
+                            <input type="range" id="referrals-slider" min="1" max="20" value="5" 
+                                   class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider">
+                        </div>
+                        
+                        <!-- Average retainer -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Average monthly retainer:
+                            </label>
+                            <div class="w-full p-3 rounded-lg bg-white text-volume-dark font-semibold text-center">
+                                $3,000/month
                             </div>
                         </div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-5xl font-bold mb-4">💰</div>
-                        <p class="text-lg">Passive income that grows with every successful referral</p>
+                    
+                    <!-- Results Display -->
+                    <div class="space-y-4">
+                        <h3 class="font-poppins font-semibold text-2xl mb-6">Your Potential Earnings:</h3>
+                        
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm opacity-90">Expected closes (80% rate):</span>
+                                <span id="expected-closes" class="font-bold text-lg">4.0</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm opacity-90">Monthly commission:</span>
+                                <span id="monthly-commission" class="font-bold text-lg">$1,200</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm opacity-90">Quick close bonuses:</span>
+                                <span id="quick-close-bonuses" class="font-bold text-lg">$250</span>
+                            </div>
+                            
+                            <div class="border-t border-white/30 pt-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold">Total monthly earnings:</span>
+                                    <span id="total-monthly" class="font-bold text-2xl text-yellow-300">$1,450</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between items-center">
+                                <span class="font-semibold">Annual potential:</span>
+                                <span id="annual-potential" class="font-bold text-xl text-yellow-300">$17,400</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                
+                <!-- Assumptions -->
+                <div class="mt-6 pt-6 border-t border-white/30">
+                    <p class="text-sm opacity-90 text-center">
+                        <strong>Assumptions:</strong> 80% close rate • ~20% quick close rate • {{ $calculatorData['commission_percentage'] }}% commission • ${{ number_format($calculatorData['quick_close_bonus'], 0) }} quick close bonus
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Motivational Message -->
+            <div class="text-center">
+                <div class="text-5xl font-bold mb-4">💰</div>
+                <p class="text-lg text-volume-gray">Passive income that grows with every successful referral</p>
             </div>
         </div>
     </section>
@@ -298,6 +347,72 @@
                 const mobileMenu = document.getElementById('mobile-menu');
                 mobileMenu.classList.add('hidden');
             });
+        });
+
+        // Earnings Calculator
+        document.addEventListener('DOMContentLoaded', function() {
+            // Calculator settings from Laravel
+            const calculatorSettings = {
+                commissionPercentage: {{ $calculatorData['commission_percentage'] }},
+                quickCloseBonus: {{ $calculatorData['quick_close_bonus'] }},
+                closeRate: 0.8, // 80%
+                quickCloseRate: 0.2 // 20% of closes are quick closes
+            };
+
+            // Get calculator elements
+            const referralsSlider = document.getElementById('referrals-slider');
+            const referralsDisplay = document.getElementById('referrals-display');
+            const expectedClosesEl = document.getElementById('expected-closes');
+            const monthlyCommissionEl = document.getElementById('monthly-commission');
+            const quickCloseBonusesEl = document.getElementById('quick-close-bonuses');
+            const totalMonthlyEl = document.getElementById('total-monthly');
+            const annualPotentialEl = document.getElementById('annual-potential');
+
+            // Fixed monthly retainer value
+            const monthlyRetainer = 3000;
+
+            // Format currency
+            function formatCurrency(amount) {
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(amount);
+            }
+
+            // Calculate earnings
+            function calculateEarnings() {
+                const referralsPerMonth = parseInt(referralsSlider.value);
+                
+                // Calculate expected closes (80% close rate)
+                const expectedCloses = referralsPerMonth * calculatorSettings.closeRate;
+                
+                // Calculate monthly commission (10% of retainer × closes)
+                const monthlyCommission = expectedCloses * monthlyRetainer * (calculatorSettings.commissionPercentage / 100);
+                
+                // Calculate quick close bonuses (20% of closes get quick close bonus)
+                const quickCloses = expectedCloses * calculatorSettings.quickCloseRate;
+                const quickCloseBonuses = quickCloses * calculatorSettings.quickCloseBonus;
+                
+                // Calculate totals
+                const totalMonthly = monthlyCommission + quickCloseBonuses;
+                const annualPotential = totalMonthly * 12;
+
+                // Update display
+                referralsDisplay.textContent = referralsPerMonth;
+                expectedClosesEl.textContent = expectedCloses.toFixed(1);
+                monthlyCommissionEl.textContent = formatCurrency(monthlyCommission);
+                quickCloseBonusesEl.textContent = formatCurrency(quickCloseBonuses);
+                totalMonthlyEl.textContent = formatCurrency(totalMonthly);
+                annualPotentialEl.textContent = formatCurrency(annualPotential);
+            }
+
+            // Add event listeners
+            referralsSlider.addEventListener('input', calculateEarnings);
+
+            // Initial calculation
+            calculateEarnings();
         });
     </script>
 </body>
