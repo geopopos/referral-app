@@ -135,8 +135,18 @@
                 <!-- Page Heading -->
                 @isset($header)
                     <header class="bg-white shadow-sm border-b border-gray-100">
-                        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                            {{ $header }}
+                        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8  flex justify-between items-center">
+                            <div>
+                                {{ $header }}
+                            </div>
+                        
+                            <div class="flex space-x-4">
+                                @if(Auth::user()->role === 'admin')
+                                    <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')" class="text-volume-dark hover:text-volume-primary border-volume-primary">
+                                        {{ __('Admin') }}
+                                    </x-nav-link>
+                                @endif
+                            </div>
                         </div>
                     </header>
                 @endisset
