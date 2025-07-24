@@ -19,8 +19,8 @@ class PartnerApiController extends Controller
     /**
      * @OA\Get(
      *     path="/api/admin/partners/search",
-     *     summary="Search for a partner by referral code",
-     *     description="Find a referral partner using their unique referral code",
+     *     summary="Search for a user by referral code",
+     *     description="Find a referral partner or admin user using their unique referral code",
      *     operationId="searchPartner",
      *     tags={"Partners"},
      *     security={{"sanctum": {}}},
@@ -43,7 +43,7 @@ class PartnerApiController extends Controller
      *                 @OA\Property(property="name", type="string", example="John Smith"),
      *                 @OA\Property(property="email", type="string", example="john@example.com"),
      *                 @OA\Property(property="referral_code", type="string", example="ref_abc12345"),
-     *                 @OA\Property(property="role", type="string", example="partner"),
+     *                 @OA\Property(property="role", type="string", example="partner", description="User role (partner or admin)"),
      *                 @OA\Property(property="created_at", type="string", format="date-time"),
      *                 @OA\Property(property="stats", type="object",
      *                     @OA\Property(property="total_leads", type="integer", example=5),
@@ -54,9 +54,9 @@ class PartnerApiController extends Controller
      *     ),
      *     @OA\Response(
      *         response=404,
-     *         description="Partner not found",
+     *         description="User not found",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Partner not found with the provided referral code")
+     *             @OA\Property(property="message", type="string", example="User not found with the provided referral code")
      *         )
      *     ),
      *     @OA\Response(
@@ -94,28 +94,28 @@ class PartnerApiController extends Controller
                 'referral_code' => 'required|string|max:255',
             ]);
 
-            $partner = User::where('referral_code', $validated['referral_code'])
-                ->where('role', 'partner')
+            $user = User::where('referral_code', $validated['referral_code'])
+                ->whereIn('role', ['partner', 'admin'])
                 ->first();
 
-            if (!$partner) {
+            if (!$user) {
                 return response()->json([
-                    'message' => 'Partner not found with the provided referral code'
+                    'message' => 'User not found with the provided referral code'
                 ], 404);
             }
 
             // Calculate basic stats
-            $totalLeads = $partner->leads()->count();
-            $totalCommissions = $partner->getTotalCommissions();
+            $totalLeads = $user->leads()->count();
+            $totalCommissions = $user->getTotalCommissions();
 
             return response()->json([
                 'partner' => [
-                    'id' => $partner->id,
-                    'name' => $partner->name,
-                    'email' => $partner->email,
-                    'referral_code' => $partner->referral_code,
-                    'role' => $partner->role,
-                    'created_at' => $partner->created_at->toISOString(),
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'referral_code' => $user->referral_code,
+                    'role' => $user->role,
+                    'created_at' => $user->created_at->toISOString(),
                     'stats' => [
                         'total_leads' => $totalLeads,
                         'total_commissions' => $totalCommissions,

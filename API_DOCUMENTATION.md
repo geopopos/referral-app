@@ -121,11 +121,11 @@ Permanently delete a lead.
 
 ## Partners API
 
-### Search Partner by Referral Code
+### Search User by Referral Code
 
 **Endpoint:** `GET /api/admin/partners/search`
 
-**Description:** Find a referral partner using their unique referral code. This endpoint is useful for attaching referrals to specific partners via API.
+**Description:** Find a referral partner or admin user using their unique referral code. This endpoint is useful for attaching referrals to specific users via API.
 
 **Authentication:** Admin required
 
@@ -160,7 +160,7 @@ GET /api/admin/partners/search?referral_code=john123
 **404 Not Found:**
 ```json
 {
-  "message": "Partner not found with the provided referral code"
+  "message": "User not found with the provided referral code"
 }
 ```
 
