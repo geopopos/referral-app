@@ -1001,6 +1001,166 @@
                     }
                 ]
             }
+        },
+        "/api/admin/partners/search": {
+            "get": {
+                "tags": [
+                    "Partners"
+                ],
+                "summary": "Search for a partner by referral code",
+                "description": "Find a referral partner using their unique referral code",
+                "operationId": "searchPartner",
+                "parameters": [
+                    {
+                        "name": "referral_code",
+                        "in": "query",
+                        "description": "The referral code to search for",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "ref_abc12345"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Partner found successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "partner": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 4
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Smith"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@example.com"
+                                                },
+                                                "referral_code": {
+                                                    "type": "string",
+                                                    "example": "ref_abc12345"
+                                                },
+                                                "role": {
+                                                    "type": "string",
+                                                    "example": "partner"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "stats": {
+                                                    "properties": {
+                                                        "total_leads": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "total_commissions": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 1250
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Partner not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Partner not found with the provided referral code"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "referral_code": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The referral code field is required."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Admin access required",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Access denied. Admin privileges required."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -1248,6 +1408,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Partners",
+            "description": "Partner management endpoints"
+        },
         {
             "name": "Authentication",
             "description": "API authentication endpoints"

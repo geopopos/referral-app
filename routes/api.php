@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\LeadApiController;
 use App\Http\Controllers\Api\CommissionApiController;
 use App\Http\Controllers\Api\WebhookApiController;
+use App\Http\Controllers\Api\PartnerApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -47,6 +48,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->name('api.admin.'
     
     // Commissions API endpoints
     Route::apiResource('commissions', CommissionApiController::class);
+    
+    // Partners API endpoints
+    Route::get('partners/search', [PartnerApiController::class, 'search'])->name('partners.search');
     
     // Webhook management endpoints
     Route::prefix('webhooks')->name('webhooks.')->group(function () {
