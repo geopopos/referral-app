@@ -27,32 +27,99 @@
                 </div>
             </div>
 
-            <!-- Referral Link Section -->
+            <!-- Two Ways to Refer Section -->
             <div class="bg-white overflow-hidden shadow-lg sm:rounded-xl border border-gray-100">
                 <div class="p-6">
-                    <h3 class="font-poppins text-lg font-bold text-volume-dark mb-4">Your Referral Link</h3>
-                    <div class="bg-gradient-to-r from-volume-light to-blue-50/50 p-4 rounded-xl border-2 border-dashed border-volume-primary/30">
-                        <div class="flex items-center space-x-3">
-                            <input 
-                                type="text" 
-                                value="{{ $user->referral_url }}" 
-                                readonly 
-                                class="flex-1 px-3 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-xs font-mono focus:border-volume-primary focus:ring-volume-primary text-volume-dark"
-                                id="referral-link"
-                            >
-                            <button 
-                                onclick="copyReferralLink()" 
-                                class="px-4 py-2.5 bg-volume-primary text-white rounded-lg hover:bg-volume-secondary transition-colors font-semibold shadow-lg text-sm"
-                            >
-                                Copy
-                            </button>
+                    <div class="text-center mb-6">
+                        <h3 class="font-poppins text-2xl font-bold text-volume-dark mb-2">2 Ways to Refer & Earn</h3>
+                        <p class="text-volume-gray">Choose the method that works best for you and your referrals</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Method 1: Referral Link -->
+                        <div class="relative">
+                            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-sm mr-3">1</div>
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                                        </svg>
+                                        <h4 class="font-poppins text-lg font-bold text-volume-dark">Share Your Referral Link</h4>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-volume-gray mb-4">Send your unique link directly to potential clients. Perfect for social media, email, or text messages.</p>
+                                
+                                <div class="flex items-center space-x-3 mb-3">
+                                    <input 
+                                        type="text" 
+                                        value="{{ $user->referral_url }}" 
+                                        readonly 
+                                        class="flex-1 px-3 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-xs font-mono focus:border-volume-primary focus:ring-volume-primary text-volume-dark"
+                                        id="referral-link"
+                                    >
+                                    <button 
+                                        onclick="copyReferralLink()" 
+                                        class="px-4 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold shadow-lg text-sm"
+                                    >
+                                        Copy
+                                    </button>
+                                </div>
+                                <div class="flex items-start text-xs text-blue-700 bg-blue-100 p-3 rounded-lg">
+                                    <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span><strong>How it works:</strong> When someone clicks your link and submits their info, you'll automatically get credit for the referral!</span>
+                                </div>
+                            </div>
                         </div>
-                        <p class="text-xs text-volume-gray mt-3 flex items-center">
-                            <svg class="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Share this link to earn commissions on new leads!
-                        </p>
+
+                        <!-- Method 2: 3-Way Email -->
+                        <div class="relative">
+                            <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-200">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-sm mr-3">2</div>
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <h4 class="font-poppins text-lg font-bold text-volume-dark">3-Way Email Introduction</h4>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-volume-gray mb-4">Personally introduce your referral via email. Great for warm introductions and building trust.</p>
+                                
+                                <div class="flex items-center space-x-3 mb-3">
+                                    <input 
+                                        type="text" 
+                                        value="partners+{{ $user->referral_code }}@volumeup.agency" 
+                                        readonly 
+                                        class="flex-1 px-3 py-2.5 border-2 border-gray-200 rounded-lg bg-white text-xs font-mono focus:border-volume-primary focus:ring-volume-primary text-volume-dark"
+                                        id="referral-email"
+                                    >
+                                    <button 
+                                        onclick="copyReferralEmail()" 
+                                        class="px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold shadow-lg text-sm"
+                                    >
+                                        Copy
+                                    </button>
+                                </div>
+                                <div class="text-xs text-green-700 bg-green-100 p-3 rounded-lg space-y-2">
+                                    <div class="flex items-start">
+                                        <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div>
+                                            <div class="font-semibold mb-1">How to send a 3-way email:</div>
+                                            <div class="space-y-1">
+                                                <div><strong>From:</strong> {{ $user->email }} (your account email)</div>
+                                                <div><strong>To:</strong> partners+{{ $user->referral_code }}@volumeup.agency, [Your referral's email address]</div>
+                                                <div class="mt-2 text-green-600">This creates a 3-way introduction connecting you, us, and your referral!</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -192,13 +259,33 @@
             const button = event.target;
             const originalText = button.textContent;
             button.textContent = 'Copied!';
-            button.classList.remove('bg-volume-primary', 'hover:bg-volume-secondary');
+            button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
             button.classList.add('bg-green-500');
             
             setTimeout(() => {
                 button.textContent = originalText;
                 button.classList.remove('bg-green-500');
-                button.classList.add('bg-volume-primary', 'hover:bg-volume-secondary');
+                button.classList.add('bg-blue-500', 'hover:bg-blue-600');
+            }, 2000);
+        }
+
+        function copyReferralEmail() {
+            const input = document.getElementById('referral-email');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value);
+            
+            // Show feedback
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.classList.remove('bg-green-500', 'hover:bg-green-600');
+            button.classList.add('bg-emerald-600');
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.classList.remove('bg-emerald-600');
+                button.classList.add('bg-green-500', 'hover:bg-green-600');
             }, 2000);
         }
     </script>
