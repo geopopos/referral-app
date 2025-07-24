@@ -1007,8 +1007,8 @@
                 "tags": [
                     "Partners"
                 ],
-                "summary": "Search for a partner by referral code",
-                "description": "Find a referral partner using their unique referral code",
+                "summary": "Search for a user by referral code",
+                "description": "Find a referral partner or admin user using their unique referral code",
                 "operationId": "searchPartner",
                 "parameters": [
                     {
@@ -1048,6 +1048,7 @@
                                                     "example": "ref_abc12345"
                                                 },
                                                 "role": {
+                                                    "description": "User role (partner or admin)",
                                                     "type": "string",
                                                     "example": "partner"
                                                 },
@@ -1079,14 +1080,14 @@
                         }
                     },
                     "404": {
-                        "description": "Partner not found",
+                        "description": "User not found",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Partner not found with the provided referral code"
+                                            "example": "User not found with the provided referral code"
                                         }
                                     },
                                     "type": "object"
