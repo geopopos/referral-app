@@ -119,6 +119,70 @@ Update any lead fields. Same structure as create endpoint but all fields are opt
 
 Permanently delete a lead.
 
+## Partners API
+
+### Search Partner by Referral Code
+
+**Endpoint:** `GET /api/admin/partners/search`
+
+**Description:** Find a referral partner using their unique referral code. This endpoint is useful for attaching referrals to specific partners via API.
+
+**Authentication:** Admin required
+
+**Query Parameters:**
+- `referral_code` (required) - The referral code to search for
+
+**Example:**
+```
+GET /api/admin/partners/search?referral_code=john123
+```
+
+**Success Response (200):**
+```json
+{
+  "partner": {
+    "id": 4,
+    "name": "John Smith",
+    "email": "john@example.com",
+    "referral_code": "john123",
+    "role": "partner",
+    "created_at": "2025-07-12T22:31:28.000000Z",
+    "stats": {
+      "total_leads": 2,
+      "total_commissions": 1697.00
+    }
+  }
+}
+```
+
+**Error Responses:**
+
+**404 Not Found:**
+```json
+{
+  "message": "Partner not found with the provided referral code"
+}
+```
+
+**422 Validation Error:**
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "referral_code": [
+      "The referral code field is required."
+    ]
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X GET "http://localhost:8000/api/admin/partners/search?referral_code=john123" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Accept: application/json"
+```
+
 ## Data Models
 
 ### Lead Model
