@@ -89,9 +89,9 @@ GET /api/admin/leads?status=new&search=acme&per_page=10&page=1
 **Required Fields:**
 - `name` - Lead's full name
 - `email` - Lead's email address
-- `company` - Company name
 
 **Optional Fields:**
+- `company` - Company name
 - `phone` - Phone number
 - `status` - Lead status
 - `notes` - Additional notes
