@@ -436,8 +436,7 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "email",
-                                    "company"
+                                    "email"
                                 ],
                                 "properties": {
                                     "name": {

@@ -142,7 +142,7 @@ class LeadApiController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"name", "email", "company"},
+     *             required={"name", "email"},
      *             @OA\Property(property="name", type="string", example="John Doe"),
      *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
      *             @OA\Property(property="phone", type="string", example="+1234567890"),
