@@ -226,7 +226,7 @@
     </section>
 
     <!-- Testimonials Section -->
-    <section id="testimonials" class="py-16 sm:py-20 px-4 bg-volume-light">
+    {{-- <section id="testimonials" class="py-16 sm:py-20 px-4 bg-volume-light">
         <div class="max-w-6xl mx-auto">
             <h2 class="font-poppins font-bold text-3xl md:text-4xl text-center mb-12 sm:mb-16 text-volume-dark">
                 Hear From Our Partners
@@ -261,7 +261,7 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> --}}
 
     <!-- Partner Call-to-Action Section -->
     <section id="partner-cta" class="py-16 sm:py-20 px-4 bg-white">
