@@ -26,6 +26,7 @@ class StoreLeadRequest extends FormRequest
             'email' => 'required|email|max:255',
             'phone' => 'nullable|string|max:20',
             'company' => 'nullable|string|max:255',
+            'referral_code' => 'nullable|string|max:255',
             'status' => 'nullable|in:new,contacted,qualified,appointment_scheduled,proposal_sent,closed,lost',
             'notes' => 'nullable|string',
             'referrer_id' => 'nullable|exists:users,id',

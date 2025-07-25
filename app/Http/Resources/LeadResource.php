@@ -20,6 +20,7 @@ class LeadResource extends JsonResource
             'email' => $this->email,
             'phone' => $this->phone,
             'company' => $this->company,
+            'referral_code' => $this->referral_code,
             'status' => $this->status,
             'notes' => $this->notes,
             'referrer_id' => $this->referrer_id,
