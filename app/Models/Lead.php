@@ -24,6 +24,19 @@ class Lead extends Model
         'company',
         'how_heard_about_us',
         'referral_code',
+        'referrer_id',
+        'notes',
+        'source',
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_term',
+        'utm_content',
+        'pipeline_stage',
+        'appointment_date',
+        'proposal_sent_date',
+        'close_date',
+        'monthly_retainer',
         'status',
         'appointment_scheduled_at',
         'appointment_completed_at',
@@ -61,7 +74,7 @@ class Lead extends Model
      */
     public function referrer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'referral_code', 'referral_code');
+        return $this->belongsTo(User::class, 'referrer_id');
     }
 
     /**
