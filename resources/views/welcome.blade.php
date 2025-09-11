@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Earn Monthly Revenue Referring Roofing & HVAC Contractors | Volume Up Agency</title>
-    <meta name="description" content="Join the Volume Up Partner Program and earn 10% monthly recurring revenue for every contractor you refer. Plus $250 bonus for quick closes.">
+    <meta name="description" content="Join the Volume Up Partner Program and earn {{ $calculatorData['commission_percentage'] }}% monthly recurring revenue for every contractor you refer. Plus ${{ number_format($calculatorData['quick_close_bonus'], 0) }} bonus for quick closes within {{ $calculatorData['quick_close_days'] }} days.">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,7 +69,7 @@
                 <span class="text-yellow-300">Roofing & HVAC Contractors</span>
             </h1>
             <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto font-medium">
-                Earn 10% monthly recurring revenue — every month your referral stays with us.
+                Earn {{ $calculatorData['commission_percentage'] }}% monthly recurring revenue — every month your referral stays with us.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="#partner-cta" class="bg-white text-volume-primary px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-100 transition-all duration-200 shadow-medium">
@@ -108,7 +108,7 @@
                         <span class="text-white font-bold text-2xl">3</span>
                     </div>
                     <h3 class="font-poppins font-semibold text-xl mb-4 text-volume-dark">You Earn Monthly</h3>
-                    <p class="text-volume-gray leading-relaxed">Receive 10% of their monthly retainer every month they stay with us.</p>
+                    <p class="text-volume-gray leading-relaxed">Receive {{ $calculatorData['commission_percentage'] }}% of their monthly retainer every month they stay with us.</p>
                 </div>
             </div>
         </div>
@@ -122,14 +122,14 @@
             </h2>
             <div class="grid md:grid-cols-3 gap-6 lg:gap-8">
                 <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-medium text-center hover:shadow-strong transition-shadow duration-300">
-                    <div class="text-4xl sm:text-5xl font-bold text-volume-primary mb-4">10%</div>
+                    <div class="text-4xl sm:text-5xl font-bold text-volume-primary mb-4">{{ $calculatorData['commission_percentage'] }}%</div>
                     <h3 class="font-poppins font-semibold text-xl mb-4 text-volume-dark">Monthly Revenue Share</h3>
-                    <p class="text-volume-gray leading-relaxed">Earn 10% of every monthly retainer payment from your referred contractors.</p>
+                    <p class="text-volume-gray leading-relaxed">Earn {{ $calculatorData['commission_percentage'] }}% of every monthly retainer payment from your referred contractors.</p>
                 </div>
                 <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-medium text-center hover:shadow-strong transition-shadow duration-300">
-                    <div class="text-4xl sm:text-5xl font-bold text-volume-primary mb-4">$250</div>
+                    <div class="text-4xl sm:text-5xl font-bold text-volume-primary mb-4">${{ number_format($calculatorData['quick_close_bonus'], 0) }}</div>
                     <h3 class="font-poppins font-semibold text-xl mb-4 text-volume-dark">Quick Close Bonus</h3>
-                    <p class="text-volume-gray leading-relaxed">Get an extra $250 bonus if your referral closes within 7 days.</p>
+                    <p class="text-volume-gray leading-relaxed">Get an extra ${{ number_format($calculatorData['quick_close_bonus'], 0) }} bonus if your referral closes within {{ $calculatorData['quick_close_days'] }} days.</p>
                 </div>
                 <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-medium text-center hover:shadow-strong transition-shadow duration-300">
                     <div class="text-4xl sm:text-5xl font-bold text-volume-primary mb-4">Monthly</div>
@@ -281,11 +281,11 @@
                         <div class="text-sm opacity-90">Quick Setup</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-3xl font-bold mb-2">10%</div>
+                        <div class="text-3xl font-bold mb-2">{{ $calculatorData['commission_percentage'] }}%</div>
                         <div class="text-sm opacity-90">Monthly Revenue</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-3xl font-bold mb-2">$250</div>
+                        <div class="text-3xl font-bold mb-2">${{ number_format($calculatorData['quick_close_bonus'], 0) }}</div>
                         <div class="text-sm opacity-90">Quick Close Bonus</div>
                     </div>
                 </div>
